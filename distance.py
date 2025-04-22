@@ -3,31 +3,29 @@ import numpy as np
 from ultralytics import YOLO
 
 # Load YOLO model
-yolo = YOLO('model/yolov8x.pt')
+yolo = YOLO('Location/model/yolov8x.pt')
 
 # Camera intrinsic parameters (lap cam)
-# fx, fy = 659.68, 648.23   # Focal lengths in pixels
-# m, n = 640, 480  # Image resolution
-# P = (320, 240)  # Principal point (u0, v0)
-# u0, v0 = P
-
-# Camera intrinsic parameters (external cam)
-fx, fy = 642.76, 653.31   # Focal lengths in pixels
-m, n = 640, 480  # Image resolution
-P = (320, 240)  # Principal point (u0, v0)
+fx, fy = 659.68, 648.23     # Focal lengths in pixels
+m, n = 640, 480             # Image resolution
+P = (320, 240)              # Principal point (u0, v0)
 u0, v0 = P
 
+
 # Camera extrinsic parameters
-phi, omega, kappa = np.radians(0), np.radians(0), np.radians(0)  # Rotation angles
+phi, omega, kappa = -15.47, 0, 0 # Rotation angles
+alpha = np.radians(90 - np.absolute(phi))
+
+phi_rad, omega_rad, kappa_rad = np.radians(phi), np.radians(omega), np.radians(kappa)  # Convert rotation angles into radians
 R = np.array([
     [1, 0, 0],
-    [0, np.cos(phi), -np.sin(phi)],
-    [0, np.sin(phi), np.cos(phi)]
+    [0, np.cos(phi_rad), -np.sin(phi_rad)],
+    [0, np.sin(phi_rad), np.cos(phi_rad)]
 ])
 R = np.around(R, decimals=3)
 
 R_inv = np.around(np.linalg.inv(R), decimals=3)  # Inverse rotation matrix
-h = 0.9  # Camera height (m)
+h = 0.925  # Camera height (m)
 C = np.array([0, h, 0]).reshape(-1, 1)  # Camera position in world coordinates
 t = -np.dot(R, C).reshape(-1, 1)  # Translation matrix
 t = np.around(t, decimals=3)
@@ -56,7 +54,7 @@ def DistanceEstimation(point_pixel: tuple) -> float:
     """
     point = InverseProjection(point_pixel)
     x, z = point[0][0], point[2][0]
-    return round(np.sqrt(x**2 + z**2), 3), point
+    return round(np.sqrt(x**2 + z**2), 3)
 
 def main():
     cam = cv.VideoCapture(1)
@@ -77,12 +75,11 @@ def main():
                 cv.rectangle(frame, pt1, pt2, (0, 255, 0), 1)
                 
                 point = (int((pt1[0] + pt2[0]) / 2), pt2[1])
-                pred_dis, tmp_point = DistanceEstimation(point_pixel=point)
+                pred_dis = DistanceEstimation(point_pixel=point)
                 
-                cv.putText(frame, f'Point: {tmp_point[0][1]}, {tmp_point[0][1]}, {tmp_point[0][2]}', (10,30), 
-                           cv.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
+
                 cv.putText(frame, f'Dist: {pred_dis} m', (30,30), 
-                           cv.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
+                           cv.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 1)
         
         cv.imshow('frame', frame)
 

@@ -3,19 +3,18 @@ import numpy as np
 from ultralytics import YOLO
 
 # Load YOLO model
-yolo = YOLO('model/yolov8x.pt')
+yolo = YOLO('Location/model/yolov8x.pt')
 
 # Camera intrinsic parameters
 fx, fy = 642.76, 653.31   # Focal lengths in pixels
 m, n = 640, 480             # Image resolution
 P = (320, 240)              # Principal point (u0, v0)
 u0, v0 = P
-B = 51.14
+B = 44.76
 
 # Camera extrinsic parameters
-phi, omega, kappa = 0, 0, 0 # Rotation angles
-# alpha = np.radians(90 - np.absolute(phi))
-alpha = 90
+phi, omega, kappa = -15.47, 0, 0 # Rotation angles
+alpha = np.radians(90 - np.absolute(phi))
 
 phi_rad, omega_rad, kappa_rad = np.radians(phi), np.radians(omega), np.radians(kappa)  # Convert rotation angles into radians
 R = np.array([
@@ -26,14 +25,14 @@ R = np.array([
 R = np.around(R, decimals=3)
 
 R_inv = np.around(np.linalg.inv(R), decimals=3)     # Inverse rotation matrix
-h = 0.9                                          # Camera height (m)
+h = 0.895                                       # Camera height (m)
 C = np.array([0, h, 0]).reshape(-1, 1)              # Camera position in world coordinates
 t = -np.dot(R, C).reshape(-1, 1)                    # Translation matrix
 t = np.around(t, decimals=3)
 
 # Camera latitude and longitude
-cam_lat = 21.003973
-cam_lon = 105.842590
+cam_lat = 21.003996
+cam_lon = 105.842638
 
 # Camera azimuth angle 
 psi = np.radians(275)
@@ -159,11 +158,11 @@ def main():
                 
                 cv.circle(frame, point, 1, (0, 0, 255), 1)
                 cv.putText(frame, f'Dist: {dis} m', (10,30), 
-                           cv.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
+                           cv.FONT_HERSHEY_COMPLEX, 0.7, (0, 255, 0), 1)
                 cv.putText(frame, f'GPS: ({gps[0]:.6f}, {gps[1]:.6f})', (10,100), 
-                           cv.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
-                cv.putText(frame, f'GPS test: ({gps_test[0]:.6f}, {gps_test[1]:.6f})', (10,100), 
-                           cv.FONT_HERSHEY_COMPLEX, 0.5, (0, 255, 0), 1)
+                           cv.FONT_HERSHEY_COMPLEX, 0.7, (0, 255, 0), 1)
+                cv.putText(frame, f'GPS test: ({gps_test[0]:.6f}, {gps_test[1]:.6f})', (10,300), 
+                           cv.FONT_HERSHEY_COMPLEX, 0.7, (0, 255, 0), 1)
         
         cv.imshow('frame', frame)
 
