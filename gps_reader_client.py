@@ -263,7 +263,9 @@ def main():
             if now - last_draw >= 1.0 / REFRESH_HZ:
                 draw(state=last)
                 try:
-                    client.sendall(location.encode(encoding="utf-8"))
+                    if CAM_LAT is not None and CAM_LON is not None:
+                        location = f"({CAM_LAT:.5f}, {CAM_LON:.5f})"
+                        client.sendall(location.encode(encoding="ascii"))
                 except (BrokenPipeError, OSError):
                     print("Server closed connection. Client exiting.")
                     break

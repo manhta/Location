@@ -155,23 +155,23 @@ def main():
                 print("Lost connection to camera!")
                 break
             
+            # Turn to non-blocking mode, make sure the FPS stays stable.
+            conn.setblocking(False) 
             try:
-                data = conn.recv(1024).decode(encoding="utf-8", errors="ignore")
+                data = conn.recv(1024)
                 if not data:
                     print("Client disconnected")
                     break
-                data = data.strip()
+                data = data.decode(encoding="ascii").strip()
                 print(f"Receive data from client! Location: {data}")
 
                 if data != "NO FIX":
                     CAM_LAT, CAM_LON = encoding_data(data)
-            except socket.timeout:
+            except (socket.timeout, BlockingIOError, socket.error):
                 pass
             
             try:
                 if ret:
-                    if frame.shape[:2] != RESOLUTION:
-                        frame = cv.resize(frame, RESOLUTION, interpolation=cv.INTER_LANCZOS4)
                     frame = cv.flip(frame, 1)
 
                     results = yolo(frame, verbose = False)
@@ -181,19 +181,17 @@ def main():
 
                         for i in range(len(boxes)):
                             class_id = int(boxes[i].cls.item())
-                            class_name = yolo_class_list.get(class_id)
+                            # class_name = yolo_class_list.get(class_id)
 
-                            if class_name == "person":
-                                box = boxes[i].xyxy.cpu().numpy()[0]
-                                pt1 = (int(box[0]), int(box[1]))
-                                pt2 = (int(box[2]), int(box[3]))
-
-                                point = (int((pt1[0] + pt2[0]) / 2), pt2[1])
-                                estimated_distance, estimated_gps = location_estimation(point)
-
-                                cv.rectangle(frame, pt1, pt2, (0,255,0), 1)
-                                cv.putText(frame, f"D: {str(round(estimated_distance, 4))} m", (pt1[0], (pt1[1]-20)), cv.FONT_HERSHEY_COMPLEX, 0.6, (0,255,0))
-                                cv.putText(frame, f"Loc: {str(estimated_gps[0])}, {str(estimated_gps[1])}", (pt1[0], (pt1[1]-5)), cv.FONT_HERSHEY_COMPLEX, 0.6, (0,255,0))
+                            box = boxes[i].xyxy.cpu().numpy()[0]
+                            pt1 = (int(box[0]), int(box[1]))
+                            pt2 = (int(box[2]), int(box[3]))
+                            point = (int((pt1[0] + pt2[0]) / 2), pt2[1])
+                            estimated_distance, estimated_gps = location_estimation(point)
+                            
+                            cv.rectangle(frame, pt1, pt2, (0,255,0), 1)
+                            cv.putText(frame, f"D: {str(round(estimated_distance, 4))} m", (pt1[0], (pt1[1]-20)), cv.FONT_HERSHEY_COMPLEX, 0.6, (0,255,0))
+                            cv.putText(frame, f"Loc: {str(estimated_gps[0])}, {str(estimated_gps[1])}", (pt1[0], (pt1[1]-5)), cv.FONT_HERSHEY_COMPLEX, 0.6, (0,255,0))
                                 
                     # Display FPS
                     new_frame_time = time.time()
